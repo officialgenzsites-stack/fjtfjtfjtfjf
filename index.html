@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday Superstar!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS Reset & Global Variables --- */
+        :root {
+            --primary-color: #ff4d6d;
+            --secondary-color: #c9184a;
+            --bg-gradient: linear-gradient(135deg, #ff758c, #ff7eb3, #c9184a);
+            --text-light: #fff;
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            width: 100%;
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden; /* Crucial for the sliding effect */
+            background: var(--bg-gradient);
+            color: var(--text-light);
+        }
+
+        h1, h2, h3 { font-family: 'Dancing Script', cursive; }
+
+        /* --- Global Effects Layers --- */
+        #hearts-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0);
+            animation: rippleAnim 0.6s linear;
+            pointer-events: none;
+        }
+        @keyframes rippleAnim {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        /* --- Main Layout Slider Structure --- */
+        .main-container {
+            display: flex;
+            width: 600vw; /* 6 sections * 100vw */
+            height: 100vh;
+            transition: transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1.000); /* Smooth easeInOutCubic */
+            will-change: transform;
+        }
+
+        .section {
+            width: 100vw;
+            height: 100vh;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- UI Components --- */
+        .btn {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            background: rgba(255,255,255,0.25);
+            border: var(--glass-border);
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            margin-top: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .btn:hover {
+            background: white;
+            color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 77, 109, 0.4);
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        /* --- Page 1: Hero Specifics --- */
+        #hero h1 { font-size: 4rem; text-align: center; z-index: 2; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .character-container {
+            width: 250px; height: 250px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50% 40% 60% 50% / 50% 60% 40% 50%; /* Blob shape */
+            display: flex; justify-content: center; align-items: center;
+            margin-bottom: 2rem;
+            box-shadow: inset 0 0 20px rgba(255,255,255,0.3);
+            transition: transform 0.1s ease-out;
+            will-change: transform;
+        }
+        .character-face { font-size: 6rem; }
+
+        /* --- Page 2: Wishes Specifics --- */
+        .wishes-grid { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; max-width: 800px;}
+        .wish-card-container { perspective: 1000px; width: 180px; height: 220px; cursor: pointer; }
+        .wish-card {
+            width: 100%; height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s;
+        }
+        .wish-card.flipped { transform: rotateY(180deg); }
+        .wish-front, .wish-back {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden;
+            display: flex; justify-content: center; align-items: center;
+            border-radius: 15px; padding: 1rem; text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .wish-front { background: linear-gradient(45deg, #ff9a9e, #fad0c4); color: var(--secondary-color); font-weight: bold;}
+        .wish-back { background: white; color: var(--secondary-color); transform: rotateY(180deg); font-size: 0.9rem; display: flex; flex-direction: column;}
+
+        /* --- Page 3: Memories Gallery Specifics --- */
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; width: 90%; max-width: 800px; }
+        .gallery-img {
+            width: 100%; height: 150px; object-fit: cover;
+            border-radius: 12px; cursor: pointer;
+            transition: transform 0.3s ease;
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+        .gallery-img:hover { transform: scale(1.05); }
+        
+        /* Modal */
+        #image-modal {
+            display: none; position: fixed; z-index: 100; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto;
+            background-color: rgba(0,0,0,0.9);
+            align-items: center; justify-content: center;
+        }
+        .modal-content { max-width: 90%; max-height: 90%; border-radius: 10px; animation: zoomIn 0.4s; }
+        .close-modal { position: absolute; top: 20px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer; }
+        @keyframes zoomIn { from {transform:scale(0)} to {transform:scale(1)} }
+
+        /* --- Page 4: Countdown Specifics --- */
+        .countdown-timer { display: flex; gap: 2rem; margin: 2rem 0; }
+        .time-box { background: var(--glass-bg); padding: 1.5rem; border-radius: 15px; text-align: center; backdrop-filter: blur(5px); border: var(--glass-border);}
+        .time-box span { display: block; font-size: 3rem; font-weight: bold; font-family: 'Dancing Script'; }
+        .time-box label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* --- Page 5: Message Specifics --- */
+        textarea {
+            width: 100%; max-width: 500px; height: 150px;
+            margin: 2rem 0; padding: 1rem;
+            border-radius: 15px; border: var(--glass-border);
+            background: rgba(255,255,255,0.1); color: white;
+            font-family: 'Poppins'; font-size: 1rem; resize: none; outline: none;
+        }
+        textarea::placeholder { color: rgba(255,255,255,0.7); }
+
+        /* --- Page 6: Final Explosion Specifics --- */
+        #final h1 { font-size: 5rem; animation: heartbeat 1.5s infinite; }
+        @keyframes heartbeat { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .burst-heart {
+            position: absolute;
+            font-size: 2rem;
+            pointer-events: none;
+            animation: burstAnim 1s ease-out forwards;
+        }
+        @keyframes burstAnim {
+            0% { transform: translate(0, 0) scale(0.5) rotate(0deg); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0) rotate(var(--rdeg)); opacity: 0; }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #hero h1 { font-size: 3rem; }
+            .countdown-timer { gap: 1rem; }
+            .time-box { padding: 1rem; }
+            .time-box span { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="hearts-canvas"></canvas>
+
+    <div id="image-modal">
+        <span class="close-modal">&times;</span>
+        <img class="modal-content" id="modal-img-target">
+    </div>
+
+    <div class="main-container">
+        <section class="section" id="hero">
+            <div class="character-container" id="animated-char">
+                <div class="character-face">🥰</div>
+            </div>
+            <h1>HEY SUPERSTAR ❤️</h1>
+            <p style="font-size: 1.2rem; margin-top: 1rem; opacity: 0.9;">It's your special time...</p>
+            <button class="btn nav-btn" data-target="1">Enter Celebration</button>
+        </section>
+
+        <section class="section" id="wishes">
+            <h2 style="font-size: 3rem; margin-bottom: 2rem;">Tap a Wish Card</h2>
+            <div class="wishes-grid">
+                <div class="wish-card-container" onclick="flipCard(this)">
+                    <div class="wish-card">
+                        <div class="wish-front">✨ Tap Me</div>
+                        <div class="wish-back">May your day be filled with endless joy and laughter! 😄</div>
+                    </div>
+                </div>
+                <div class="wish-card-container" onclick="flipCard(this)">
+                    <div class="wish-card">
+                        <div class="wish-front">🎂 Tap Me</div>
+                        <div class="wish-back">Wishing you success in everything you do this year! 🚀</div>
+                    </div>
+                </div>
+                <div class="wish-card-container" onclick="flipCard(this)">
+                    <div class="wish-card">
+                        <div class="wish-front">🎁 Tap Me</div>
+                        <div class="wish-back">May all your dreams and birthday wishes come true! 🌟</div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn nav-btn" data-target="2">See Memories</button>
+        </section>
+
+        <section class="section" id="memories">
+             <h2 style="font-size: 3rem; margin-bottom: 2rem;">Our Memories</h2>
+             <div class="gallery-grid glass-card">
+                 <img src="https://picsum.photos/id/1011/300/300" class="gallery-img" alt="memory1">
+                 <img src="https://picsum.photos/id/1025/300/300" class="gallery-img" alt="memory2">
+                 <img src="https://picsum.photos/id/1005/300/300" class="gallery-img" alt="memory3">
+                 <img src="https://picsum.photos/id/338/300/300" class="gallery-img" alt="memory4">
+                 <img src="https://picsum.photos/id/433/300/300" class="gallery-img" alt="memory5">
+                 <img src="https://picsum.photos/id/54/300/300" class="gallery-img" alt="memory6">
+             </div>
+            <button class="btn nav-btn" data-target="3">Next Chapter</button>
+        </section>
+
+        <section class="section" id="countdown">
+             <h2 style="font-size: 3rem;">Until Next Time...</h2>
+             <p>Counting down to your next big day!</p>
+             <div class="countdown-timer">
+                 <div class="time-box"><span id="days">00</span><label>Days</label></div>
+                 <div class="time-box"><span id="hours">00</span><label>Hours</label></div>
+                 <div class="time-box"><span id="minutes">00</span><label>Mins</label></div>
+                 <div class="time-box"><span id="seconds">00</span><label>Secs</label></div>
+             </div>
+            <button class="btn nav-btn" data-target="4">Leave a Note</button>
+        </section>
+
+        <section class="section" id="message-page">
+            <div class="glass-card" style="width: 90%; max-width: 600px; text-align: center;">
+                <h2 style="font-size: 2.5rem;">Write a little note for yourself...</h2>
+                <textarea id="birthday-note" placeholder="Something to remember this day by..."></textarea>
+                <br>
+                <button class="btn" onclick="saveMessage()">Save Note 💾</button>
+            </div>
+            <button class="btn nav-btn" data-target="5" style="margin-top: 3rem;">The Grand Finale</button>
+        </section>
+
+        <section class="section" id="final">
+            <h1>HAPPY BIRTHDAY ❤️</h1>
+            <h3 style="margin-top: 1rem;">Have an amazing year ahead!</h3>
+            </section>
+    </div>
+
+    <script>
+        /* =========================================
+           GLOBAL: Navigation Slider Logic
+           ========================================= */
+        let currentSectionIndex = 0;
+        const mainContainer = document.querySelector('.main-container');
+        const navButtons = document.querySelectorAll('.nav-btn');
+        const totalSections = 6;
+
+        function navigateTo(index) {
+            if (index < 0 || index >= totalSections) return;
+            currentSectionIndex = index;
+            mainContainer.style.transform = `translateX(-${currentSectionIndex * 100}vw)`;
+
+            // Trigger specific section animations
+            if(currentSectionIndex === 5) {
+                setTimeout(triggerHeartBurst, 500);
+            }
+        }
+
+        navButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetIndex = parseInt(e.target.getAttribute('data-target'));
+                navigateTo(targetIndex);
+            });
+        });
+
+        /* =========================================
+           GLOBAL: Click Ripple Effect
+           ========================================= */
+        document.addEventListener('click', function(e) {
+            // Don't show ripple if clicking buttons or interactive elements
+            if (e.target.tagName === 'BUTTON' || e.target.closest('.wish-card-container') || e.target.tagName === 'IMG') return;
+
+            let ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            document.body.appendChild(ripple);
+
+            let rect = document.body.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            let y = e.clientY - rect.top;
+            let size = 50; // Initial size
+
+            ripple.style.left = (x - size/2) + 'px';
+            ripple.style.top = (y - size/2) + 'px';
+            ripple.style.width = ripple.style.height = size + 'px';
+
+            // Remove ripple after animation finishes
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+
+        /* =========================================
+           GLOBAL: Background Falling Hearts (Canvas)
+           ========================================= */
+        const canvas = document.getElementById('hearts-canvas');
+        const ctx = canvas.getContext('2d');
+        let hearts = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Heart {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * -canvas.height; // Start above screen
+                this.size = Math.random() * 15 + 5;
+                this.speed = Math.random() * 2 + 1;
+                this.opacity = Math.random() * 0.5 + 0.1;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = (Math.random() - 0.5) * 2;
+            }
+            update() {
+                this.y += this.speed;
+                this.rotation += this.rotationSpeed;
+                // Reset if it goes off screen
+                if (this.y > canvas.height) {
+                    this.y = -50;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation * Math.PI / 180);
+                ctx.globalAlpha = this.opacity;
+                ctx.fillStyle = '#fff';
+                ctx.font = `${this.size}px Arial`;
+                ctx.fillText('❤', -this.size/2, -this.size/2);
+                ctx.restore();
+            }
+        }
+
+        function initHearts() {
+            for(let i=0; i < 50; i++) hearts.push(new Heart());
+        }
+        function animateHearts() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hearts.forEach(heart => { heart.update(); heart.draw(); });
+            requestAnimationFrame(animateHearts);
+        }
+        initHearts();
+        animateHearts();
+
+
+        /* =========================================
+           PAGE 1: Hero Character Mouse Tracking
+           ========================================= */
+        const charContainer = document.getElementById('animated-char');
+        document.addEventListener('mousemove', (e) => {
+            if(currentSectionIndex !== 0) return; // Only track on first page
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+            // Subtle rotation and tilting based on mouse position
+            charContainer.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+
+
+        /* =========================================
+           PAGE 2: Wish Card Flip
+           ========================================= */
+        function flipCard(cardContainer) {
+            const card = cardContainer.querySelector('.wish-card');
+            card.classList.toggle('flipped');
+        }
+
+
+        /* =========================================
+           PAGE 3: Image Modal
+           ========================================= */
+        const modal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('modal-img-target');
+        const closeBtn = document.querySelector('.close-modal');
+        const galleryImages = document.querySelectorAll('.gallery-img');
+
+        galleryImages.forEach(img => {
+            img.addEventListener('click', function(){
+                modal.style.display = "flex";
+                modalImg.src = this.src;
+            });
+        });
+
+        closeBtn.onclick = function() { modal.style.display = "none"; }
+        modal.onclick = function(e) {
+            if(e.target === modal) modal.style.display = "none";
+        }
+
+
+        /* =========================================
+           PAGE 4: Countdown Timer
+           ========================================= */
+        function updateCountdown() {
+            const now = new Date();
+            let currentYear = now.getFullYear();
+            // SET THE BIRTHDAY DATE HERE (Month is 0-indexed: Oct = 9)
+            // Example: October 25th
+            let birthdayTarget = new Date(currentYear, 9, 25); 
+
+            if (now > birthdayTarget) {
+                // If birthday passed this year, target next year
+                birthdayTarget = new Date(currentYear + 1, 9, 25);
+            }
+
+            const diff = birthdayTarget - now;
+
+            const d = Math.floor(diff / 1000 / 60 / 60 / 24);
+            const h = Math.floor(diff / 1000 / 60 / 60) % 24;
+            const m = Math.floor(diff / 1000 / 60) % 60;
+            const s = Math.floor(diff / 1000) % 60;
+
+            document.getElementById('days').innerText = d < 10 ? '0' + d : d;
+            document.getElementById('hours').innerText = h < 10 ? '0' + h : h;
+            document.getElementById('minutes').innerText = m < 10 ? '0' + m : m;
+            document.getElementById('seconds').innerText = s < 10 ? '0' + s : s;
+        }
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+
+        /* =========================================
+           PAGE 5: Save Message (Local Storage)
+           ========================================= */
+        const noteArea = document.getElementById('birthday-note');
+        // Load saved message if exists
+        const savedNote = localStorage.getItem('bdayMessage');
+        if(savedNote) noteArea.value = savedNote;
+
+        function saveMessage() {
+            const msg = noteArea.value;
+            if(msg.trim() === "") {
+                alert("Please write something first! 😊");
+                return;
+            }
+            localStorage.setItem('bdayMessage', msg);
+            alert("Note saved successfully! ❤️");
+        }
+
+
+        /* =========================================
+           PAGE 6: Final Heart Burst Animation
+           ========================================= */
+        function triggerHeartBurst() {
+            const finalSection = document.getElementById('final');
+            for(let i=0; i < 60; i++) {
+                let heart = document.createElement('div');
+                heart.className = 'burst-heart';
+                heart.innerHTML = ['❤️', '💖', '✨', '🎉'][Math.floor(Math.random()*4)];
+                
+                // Randomize explosion direction and rotation
+                let tx = (Math.random() - 0.5) * 800; // Translate X pixels
+                let ty = (Math.random() - 0.5) * 800; // Translate Y pixels
+                let rdeg = Math.random() * 360;
+
+                heart.style.setProperty('--tx', `${tx}px`);
+                heart.style.setProperty('--ty', `${ty}px`);
+                heart.style.setProperty('--rdeg', `${rdeg}deg`);
+                
+                // Randomize size slightly
+                heart.style.fontSize = (Math.random() * 2 + 1) + 'rem';
+                // Random delay for natural feel
+                heart.style.animationDelay = (Math.random() * 0.2) + 's';
+
+                finalSection.appendChild(heart);
+
+                // Cleanup elements after animation
+                setTimeout(() => { heart.remove(); }, 1200);
+            }
+        }
+    </script>
+</body>
+</html>
